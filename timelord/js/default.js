@@ -17,8 +17,8 @@
 
                 // Set the window size
 			    var v = Windows.UI.ViewManagement.ApplicationView.getForCurrentView();
-			    v.setPreferredMinSize({ height: 100, width: 400 });
-			    v.tryResizeView({ height: 100, width: 500 });
+			    v.setPreferredMinSize({ height: 150, width: 400 });
+			    v.tryResizeView({ height: 150, width: 500 });
                 
 			    // Set titlebar appearance
 			    helper.extendViewIntoTitleBar(true);
