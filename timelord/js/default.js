@@ -1,6 +1,4 @@
-﻿// For an introduction to the Blank template, see the following documentation:
-// http://go.microsoft.com/fwlink/?LinkId=232509
-(function () {
+﻿(function () {
 	//"use strict";
 
 	var app = WinJS.Application;
@@ -9,6 +7,8 @@
 
 	var data = [];
 	var currentWork;
+	var settings = {};
+	var currentWindow;
 
 	app.onactivated = function (args) {
 		if (args.detail.kind === activation.ActivationKind.launch) {
@@ -27,10 +27,13 @@
 			    v.titleBar.buttonInactiveBackgroundColor = Windows.UI.Colors.dimGray;
 
 			    // Get saved data
-			    data = loadData().done(function () {});
+			    data = loadData().done(function () { });
 
-			    // Start timer
-			    startTimer();
+                // Load settings
+			    loadSettings().done(function () {
+			        // Start timer
+			        startTimer();
+			    });
 
 			} else {
 				// TODO: This application was suspended and then terminated.
@@ -39,8 +42,12 @@
 			args.setPromise(WinJS.UI.processAll());
 
 		    // Register event handlers
-			var submitButton = document.getElementById("submit");
-			submitButton.addEventListener("click", submitClickHandler, false);
+			var settingsButton = document.getElementById("settings");
+			settingsButton.addEventListener("click", openSettings, false);
+
+			var textbox = document.getElementById("currentInput");
+			textbox.addEventListener("keydown", keysDown, false);
+			textbox.addEventListener("keyup", keysUp, false);
 		}
 	};
 
@@ -50,23 +57,82 @@
 		// If you need to complete an asynchronous operation before your application is suspended, call args.setPromise().
 	};
 
+	var keys = Array.apply(null, Array(30)).map(function () { return false; }); // Global... this should probably be changed
+	
+	function keysDown(e) {
+	    keys[e.keyCode] = true;
+	    console.log("Key down: " + e.keyCode);
+	    if (keys[13] && keys[16]) {
+            console.log("Shift + Enter detected.")
+	        submitHandler();
+	    };
+	}
+
+	function keysUp(e) {
+	    console.log("Resetting keys." + e.keyCode);
+	    keys[e.keyCode] = false;
+	}
+
 	function startTimer() {
-	    setTimeout(focus, 10000);
+	    var interval;
+
+	    if (settings.interval == "timing30") interval = 1800000;
+	    else if (settings.interval == "timing15") interval = 915000;
+	    else if (settings.interval == "timing60") interval = 3600000;
+	    else if (settings.interval == "timingTest") interval = 15000;
+
+	    console.log("Starting popup interval at " + interval + " ms.");
+
+	    setTimeout(focus, interval);
 	}
 
 	function focus() {
 	    console.log("Focusing...");
-	    helper.bringToFront("timelord");
+
+        // Save active window for recall
+	    currentWindow = helper.getActiveWindowTitle();
+	    helper.bringToFront("Timelord");
+
+	    document.getElementById("currentInput").focus();
 
 	    startTimer();
 	}
 
-	function submitClickHandler(eventInfo) {
+	function openSettings() {
+	    window.open("settings.html");
+	}
+
+	function submitHandler() {
+	    var hours = 0;
+
 	    currentWork = document.getElementById("currentInput").value;
 	    addEntry(currentWork);
-	    var currentSubmitted = "Added 30 min to " + currentWork + ", for a total of " + getToday(currentWork);
+	    hours = getToday(currentWork) / 60;
+
+	    var currentSubmitted = "Added 30 min to " + currentWork + ", for a total of " + hours + " hours today.";
 	    document.getElementById("submitted").innerText = currentSubmitted;
-	    storeTimeEvent();
+	    document.getElementById("currentInput").value = "";
+
+	    storeTimeEvent().done(function () {
+	        //helper.hideWindow("Timelord");
+	        // Reset keys
+	        keys.fill(false);
+	        helper.bringToFront(currentWindow);
+	    })
+	}
+
+	function saveSettings() {
+	    var appData = Windows.Storage.ApplicationData.current;
+	    var localFolder = appData.localFolder;
+	    var settingsFile = "settings.json";
+
+	    return localFolder.createFileAsync(settingsFile,
+            Windows.Storage.CreationCollisionOption.openIfExists)
+        .then(function (file) {
+            return Windows.Storage.FileIO.writeTextAsync(file, JSON.stringify(settings));
+        }).then(function () {
+
+        });
 	}
 
 	function storeTimeEvent() {
@@ -83,6 +149,31 @@
         });
 	}
 
+	function loadSettings() {
+	    var appData = Windows.Storage.ApplicationData.current;
+	    var localFolder = appData.localFolder;
+	    var settingsFile = "settings.json";
+
+	    return localFolder.createFileAsync(settingsFile,
+            Windows.Storage.CreationCollisionOption.openIfExists)
+        .then(function (file) {
+            console.log("Opened Settings file...");
+            return localFolder.getFileAsync(settingsFile)
+            .then(function (file) {
+                console.log("Read Settings file...");
+                return Windows.Storage.FileIO.readTextAsync(file)
+                .then(function (text) {
+                    try {
+                        settings = JSON.parse(text);
+                    } catch (err) {
+                        console.log("Unable to parse settings JSON: " + err);
+                        console.log("No previous settings data.");
+                    }
+                });
+            });
+        });
+	}
+
 	function loadData() {
 	    var appData = Windows.Storage.ApplicationData.current;
 	    var localFolder = appData.localFolder;
@@ -91,20 +182,20 @@
 	    return localFolder.createFileAsync(timeLog,
             Windows.Storage.CreationCollisionOption.openIfExists)
         .then(function (file) {
-            console.log("Opened file...");
+            console.log("Opened Time file...");
             return localFolder.getFileAsync(timeLog)
             .then(function (file) {
-                console.log("Read file...");
+                console.log("Read Time file...");
                 return Windows.Storage.FileIO.readTextAsync(file)
                 .then(function (text) {
                     try {
                         data = JSON.parse(text);
                     } catch(err) {
-                        console.log("Unable to parse JSON: " + err);
-                        console.log("No previous data.");
+                        console.log("Unable to parse time JSON: " + err);
+                        console.log("No previous time data.");
                         data = [];
                     }
-                    console.log("File contains: " + JSON.stringify(data));
+                    console.log("Time file contains: " + JSON.stringify(data));
                 });
             });
         });
@@ -120,7 +211,7 @@
 
 	    var workToday = getToday(partner, true);
 
-	    if (workToday != null) {
+	    if (workToday != null && workToday != "null" && workToday != "undefined") {
 	        data[workToday.index][partner][today] = data[workToday.index][partner][today] + 30;
 	        console.log("Adding time: " + JSON.stringify(data[workToday.index]));
 	    } else {

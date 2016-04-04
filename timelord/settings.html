@@ -1,0 +1,45 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Timelord Settings</title>
+
+    <!-- WinJS references -->
+    <link href="WinJS/css/ui-dark.css" rel="stylesheet" />
+    <link href="lib/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="lib/mui-0.4.8/css/mui.min.css" rel="stylesheet" type="text/css" />
+    <script src="lib/mui-0.4.8/js/mui.min.js"></script>
+    <script src="WinJS/js/base.js"></script>
+    <script src="WinJS/js/ui.js"></script>
+
+    <!-- timelord references -->
+    <link href="/css/default.css" rel="stylesheet" />
+    <script src="/js/settings.js"></script>
+</head>
+<body class="win-type-body">
+    <div class="header"></div>
+    <div class="main">
+        <div id="timing" class="mui-radio">
+            <p>Prompt Interval</p>
+            <label>
+                <input name="timing" type="radio" id="timingTest" value="timingTest" />
+                15 Seconds
+            </label>
+            <label>
+                <input name="timing" type="radio" id="timing15" value="timing15" />
+                15 Minutes
+            </label>
+            <label>
+                <input name="timing" type="radio" id="timing30" value="timing30" />
+                30 Minutes
+            </label>
+            <label>
+                <input name="timing" type="radio" id="timing60" value="timing60" />
+                1 Hour
+            </label>
+        </div>
+    </div>
+    <div class="footer">
+        <button class="mui-btn mui-btn--primary center" id="save">Save</button>
+    </div>
+</body>
+</html>
